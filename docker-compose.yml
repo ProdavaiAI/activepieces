@@ -9,6 +9,8 @@ services:
     volumes:
       - ./config/nginx.conf:/etc/nginx/nginx.conf  # Конфигурация Nginx
       - ./certs:/etc/nginx/certs  # Сертификаты от Certbot
+    networks:
+      - activepieces
     depends_on:
       - activepieces
 
