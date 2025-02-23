@@ -8,7 +8,7 @@ services:
       - "443:443"  # Для HTTPS
     volumes:
       - ./config/nginx.conf:/etc/nginx/nginx.conf  # Конфигурация Nginx
-      - certs:/etc/nginx/certs  # Сертификаты от Certbot
+      - ./certs:/etc/nginx/certs  # Сертификаты от Certbot
     depends_on:
       - activepieces
 
@@ -16,7 +16,7 @@ services:
     image: certbot/certbot:latest
     container_name: certbot
     volumes:
-      - certs:/etc/letsencrypt
+      - ./certs:/etc/letsencrypt
       - ./html:/var/www/html
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
     depends_on:
