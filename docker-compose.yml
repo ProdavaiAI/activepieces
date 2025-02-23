@@ -1,5 +1,26 @@
 version: '3.0'
 services:
+  nginx-proxy:
+    image: nginx:latest
+    container_name: nginx-proxy
+    ports:
+      - "80:80"    # Для начальной проверки Certbot
+      - "443:443"  # Для HTTPS
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/nginx.conf  # Конфигурация Nginx
+      - certs:/etc/nginx/certs  # Сертификаты от Certbot
+    depends_on:
+      - activepieces
+
+  certbot:
+    image: certbot/certbot:latest
+    container_name: certbot
+    volumes:
+      - certs:/etc/letsencrypt
+      - ./html:/var/www/html
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    depends_on:
+      - nginx-proxy
   activepieces:
     image: ghcr.io/activepieces/activepieces:0.44.0
     container_name: activepieces
@@ -7,25 +28,12 @@ services:
     ## Enable the following line if you already use AP_EXECUTION_MODE with SANDBOXED or old activepieces, checking the breaking change documentation for more info.
     ## privileged: true
     ports:
-      - '8080:80'
+      - '8080:8080'
     depends_on:
-      - postgres
       - redis
     env_file: .env
     volumes:
       - ./cache:/usr/src/app/cache
-    networks:
-      - activepieces
-  postgres:
-    image: 'postgres:14.4'
-    container_name: postgres
-    restart: unless-stopped
-    environment:
-      - 'POSTGRES_DB=${AP_POSTGRES_DATABASE}'
-      - 'POSTGRES_PASSWORD=${AP_POSTGRES_PASSWORD}'
-      - 'POSTGRES_USER=${AP_POSTGRES_USERNAME}'
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
     networks:
       - activepieces
   redis:
@@ -37,7 +45,6 @@ services:
     networks:
       - activepieces
 volumes:
-  postgres_data:
   redis_data:
 networks:
   activepieces:
